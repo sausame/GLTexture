@@ -15,6 +15,10 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
+import android.renderscript.Allocation;
+import android.renderscript.Element;
+import android.renderscript.RenderScript;
+import android.renderscript.ScriptIntrinsicYuvToRGB;
 import android.view.SurfaceHolder;
 
 public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback, 
@@ -79,13 +83,26 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 	
 	/** This is a handle to our cube shading program. */
 	private int mProgramHandle;
-	
+
+    /** This is a handle to the RenderScript object **/
+    private final RenderScript mRS;
+    private final ScriptIntrinsicYuvToRGB mScriptIntrinsicYuvToRGB;
+
+    /** RenderScript buffers **/
+    private Allocation mInputAllocation,mOutputAllocation;
+
+    private Bitmap lazyOutputBitmap;
+
+
+
 	/**
 	 * Initialize the model data.
 	 */
 	public GLLayer(final Context activityContext)
 	{	
 		super(activityContext);
+        mRS=RenderScript.create(activityContext);
+        mScriptIntrinsicYuvToRGB=ScriptIntrinsicYuvToRGB.create(mRS,Element.U8_4(mRS));
 		mActivityContext = activityContext;
 		
 		// Define points for a cube.		
@@ -289,7 +306,22 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 			int h = CamLayer.previewSize.height;
 		
 			//byte[] tempbb = new byte[w*h*3];
-			yuv420rgb(frameByte, w, h, glCameraFrame, 512, 512);
+            if (mInputAllocation==null || mInputAllocation.getBytesSize()!=frameByte.length){
+                if (mInputAllocation!=null) mInputAllocation.destroy();
+                mInputAllocation=Allocation.createSized(mRS, Element.U8(mRS),frameByte.length);
+
+                if (lazyOutputBitmap!=null) lazyOutputBitmap.recycle();
+                lazyOutputBitmap=Bitmap.createBitmap(w,h, Bitmap.Config.ARGB_8888); //ARGB_8888 == Element.U8_4
+                if (mOutputAllocation!=null) mOutputAllocation.destroy();
+                mOutputAllocation=Allocation.createFromBitmap(mRS,lazyOutputBitmap);
+            }
+            mInputAllocation.copyFrom(frameByte);
+            mScriptIntrinsicYuvToRGB.setInput(mInputAllocation);
+            mScriptIntrinsicYuvToRGB.forEach(mOutputAllocation);
+            //Resulted bytes will retain in the bitmap
+            //mOutputAllocation.copyTo(lazyOutputBitmap);
+
+			//yuv420rgb(frameByte, w, h, glCameraFrame, 512, 512);
 		
 			/*int bwCounter = 0;
 			int yuvsCounter = 0;
@@ -320,19 +352,38 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 			
 			GLES20.glGenTextures(1, textureHandle, 0);
 
+            /*
 			if(textureHandle[0] != 0 && glCameraFrame != null)
 			{
 				GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle[0]);
-				GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGB, 512, 512, 0, 
+				GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGB, 512, 512, 0,
 						GLES20.GL_RGB, GLES20.GL_UNSIGNED_BYTE, ByteBuffer.wrap(glCameraFrame));
-				
+
 				//Bitmap bmp = BitmapFactory.decodeByteArray(glCameraFrame, 0, glCameraFrame.length);
-				
+
 				//GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bmp, 0);
+
+
 				GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
 				GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
 				//bmp.recycle();
 			}
+            */
+            if(textureHandle[0] != 0 && lazyOutputBitmap != null)
+            {
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle[0]);
+                //GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGB, 512, 512, 0,
+                //		GLES20.GL_RGB, GLES20.GL_UNSIGNED_BYTE, ByteBuffer.wrap(glCameraFrame));
+
+                //Bitmap bmp = BitmapFactory.decodeByteArray(glCameraFrame, 0, glCameraFrame.length);
+
+                //GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bmp, 0);
+                GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, lazyOutputBitmap, 0);
+
+                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
+                //bmp.recycle();
+            }
 
 		}
 	}
