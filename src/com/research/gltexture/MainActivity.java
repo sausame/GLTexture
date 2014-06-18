@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
+import android.widget.FrameLayout;
 
 public class MainActivity extends Activity {
 	private GLLayer glView;
@@ -28,9 +29,17 @@ public class MainActivity extends Activity {
         mPreview = new CamLayer(this, glView);
         tv = new TextView(this);
         
-        setContentView(mPreview);
-        addContentView(glView, new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
-        addContentView(tv, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+        setContentView(R.layout.activity_main);
+        
+        FrameLayout layout = (FrameLayout)findViewById(R.id.preview1);
+		layout.addView(mPreview, 0);
+
+        layout = (FrameLayout)findViewById(R.id.preview2);
+		layout.addView(glView, 0);
+		
+//        setContentView(mPreview);
+//        addContentView(glView, new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
+//        addContentView(tv, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
     }
     
     public void onResume(){

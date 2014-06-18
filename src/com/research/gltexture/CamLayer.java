@@ -1,5 +1,7 @@
 package com.research.gltexture;
 
+import java.io.IOException;
+
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
@@ -39,7 +41,7 @@ public class CamLayer extends SurfaceView implements SurfaceHolder.Callback, Pre
 
     public void surfaceCreated(SurfaceHolder holder) {
     	synchronized(this) {
-	        mCamera = Camera.open();
+	        mCamera = Camera.open(1);
 	
 	    	Camera.Parameters p = mCamera.getParameters();  
 	    	//p.setPreviewFormat(ImageFormat.RGB_565);
@@ -48,11 +50,11 @@ public class CamLayer extends SurfaceView implements SurfaceHolder.Callback, Pre
 	    	//mCamera.setParameters(p);
 	    	
 	    	//do not display the camera preview..!!
-	    	/*try {
+	    	try {
 				mCamera.setPreviewDisplay(holder);
 			} catch (IOException e) {
 				Log.e("Camera", "mCamera.setPreviewDisplay(holder);");
-			}*/
+			}
 			previewSize = p.getPreviewSize();
 	    	mCamera.startPreview();
     		mCamera.setPreviewCallback(this);
