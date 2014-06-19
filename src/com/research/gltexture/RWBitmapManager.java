@@ -20,7 +20,7 @@ import java.util.Calendar;
 public class RWBitmapManager {
 	private static final String TAG = "RWBitmapManager";
 
-	private static final boolean IS_KEEP_FILLED_BUFFER = true;
+	private static final boolean IS_KEEP_FILLED_BUFFER = false;
 
 	private static final int INVALID_INT = -1;
 	private static final int BUFFER_SIZE = 2;
@@ -78,32 +78,42 @@ public class RWBitmapManager {
 
 	public Bitmap getInputBuffer() {
 		synchronized (mStatuses) {
-			for (mInputIndex = 0; mInputIndex < BUFFER_SIZE; mInputIndex++) {
-				if (EMPTY_BUFFER_DONE == mStatuses[mInputIndex]) {
-					mStatuses[mInputIndex] = FILLING_BUFFER;
-					break;
-				}
+			if (BUFFER_SIZE == ++ mInputIndex) {
+				mInputIndex = 0;
 			}
 
-			// Check filled buffer.
-			if (BUFFER_SIZE == mInputIndex && IS_KEEP_FILLED_BUFFER) {
-				// Log.v(TAG, "Checking buffer: " + mStatuses[0] + ", " +
-				// mStatuses[1]);
-				for (mInputIndex = 0; mInputIndex < BUFFER_SIZE; mInputIndex++) {
-					if (FILL_BUFFER_DONE == mStatuses[mInputIndex]) {
-						mStatuses[mInputIndex] = FILLING_BUFFER;
-						break;
+			if (EMPTY_BUFFER_DONE == mStatuses[mInputIndex]) {
+				mStatuses[mInputIndex] = FILLING_BUFFER;
+			} else {
+				if (BUFFER_SIZE == ++ mInputIndex) {
+					mInputIndex = 0;
+				}
+
+				if (EMPTY_BUFFER_DONE == mStatuses[mInputIndex]) {
+					mStatuses[mInputIndex] = FILLING_BUFFER;
+				} else if (IS_KEEP_FILLED_BUFFER) {
+					// Check filled buffer.
+
+					// Log.v(TAG, "Checking buffer: " + mStatuses[0] + ", " +
+					// mStatuses[1]);
+					for (mInputIndex = 0; mInputIndex < BUFFER_SIZE; mInputIndex++) {
+						if (FILL_BUFFER_DONE == mStatuses[mInputIndex]) {
+							mStatuses[mInputIndex] = FILLING_BUFFER;
+							break;
+						}
+					}
+
+					if (BUFFER_SIZE == mInputIndex) {
+						mInputIndex = INVALID_INT;
+						// Log.e(TAG, "No empty buffer: " + mStatuses[0] + ", " +
+						// mStatuses[1]);
+						return null;
 					}
 				}
 			}
 		}
 
-		if (BUFFER_SIZE == mInputIndex) {
-			mInputIndex = INVALID_INT;
-			// Log.e(TAG, "No empty buffer: " + mStatuses[0] + ", " +
-			// mStatuses[1]);
-			return null;
-		}
+		display(true);
 
 		return mBitmaps[mInputIndex];
 	}
@@ -120,20 +130,29 @@ public class RWBitmapManager {
 
 	public Bitmap getOutputBuffer() {
 		synchronized (mStatuses) {
-			for (mOutputIndex = 0; mOutputIndex < BUFFER_SIZE; mOutputIndex++) {
+			if (BUFFER_SIZE == ++ mOutputIndex) {
+				mOutputIndex = 0;
+			}
+
+			if (FILL_BUFFER_DONE == mStatuses[mOutputIndex]) {
+				mStatuses[mOutputIndex] = EMPTYING_BUFFER;
+			} else {
+				if (BUFFER_SIZE == ++ mOutputIndex) {
+					mOutputIndex = 0;
+				}
+
 				if (FILL_BUFFER_DONE == mStatuses[mOutputIndex]) {
 					mStatuses[mOutputIndex] = EMPTYING_BUFFER;
-					break;
+				} else {
+					mOutputIndex = INVALID_INT;
+					// Log.e(TAG, "No filled buffer: " + mStatuses[0] + ", " +
+					// mStatuses[1]);
+					return null;
 				}
 			}
 		}
 
-		if (BUFFER_SIZE == mOutputIndex) {
-			mOutputIndex = INVALID_INT;
-			// Log.e(TAG, "No filled buffer: " + mStatuses[0] + ", " +
-			// mStatuses[1]);
-			return null;
-		}
+		display(false);
 
 		return mBitmaps[mOutputIndex];
 	}
@@ -150,6 +169,16 @@ public class RWBitmapManager {
 				mStatuses[mOutputIndex] = EMPTY_BUFFER_DONE;
 			}
 		}
+	}
+
+	// -----------------------------------------------------------------------
+	// Dummy
+	// -----------------------------------------------------------------------
+	public final void display(boolean in) {
+		String str0 = (0 == mInputIndex) ? "X" : ((0 == mOutputIndex) ? "O" : " ");
+		String str1 = (1 == mInputIndex) ? "X" : ((1 == mOutputIndex) ? "O" : " ");
+
+		Log.v(TAG, (in ? "-->   " : "<--   ") + str0 + "   " + str1);
 	}
 
 	// -----------------------------------------------------------------------
@@ -175,7 +204,7 @@ public class RWBitmapManager {
 			mCount ++;
 
 			int color;
-			switch ((mCount / 20) % 3) {
+			switch ((mCount / 10) % 3) {
 				case 1:
 					color = 0xffff0000;
 					break;

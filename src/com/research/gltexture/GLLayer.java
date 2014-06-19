@@ -99,7 +99,7 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 	/** RenderScript buffers **/
 	//private Allocation mInputAllocation, mOutputAllocation;
 
-	//private Bitmap lazyOutputBitmap;
+	private Bitmap lazyOutputBitmap;
 
 	private DataHelper mDataHelper = new DataHelper();
 	private RWBitmapManager mRWBitmapManager = new RWBitmapManager();
@@ -288,6 +288,9 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 
 	@Override
 	public void onDrawFrame(GL10 glUnused) {
+		lazyOutputBitmap = mRWBitmapManager.getOutputBuffer();
+		if (null == lazyOutputBitmap) return;
+
 		GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
 		// Set our per-vertex lighting program.
@@ -320,6 +323,7 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 		Matrix.translateM(mModelMatrix, 0, 0.0f, 0.7f, -3.5f);
 		drawCube();
 
+		mRWBitmapManager.returnOutputBuffer();
 	}
 
 	/**
@@ -422,11 +426,11 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 	private void bindCameraTexture() {
 //		synchronized (this) {
 
-//			Bitmap lazyOutputBitmap = mDataHelper.getDummyOutputBuffer(mActivityContext);
-//			Bitmap lazyOutputBitmap = mDataHelper.getOutputBuffer();
+//			lazyOutputBitmap = mDataHelper.getDummyOutputBuffer(mActivityContext);
+//			lazyOutputBitmap = mDataHelper.getOutputBuffer();
 
-			Bitmap lazyOutputBitmap = mRWBitmapManager.getOutputBuffer();
-//			Bitmap lazyOutputBitmap = mRWBitmapManager.getDummyOutputBuffer(mActivityContext);
+//			lazyOutputBitmap = mRWBitmapManager.getOutputBuffer();
+//			lazyOutputBitmap = mRWBitmapManager.getDummyOutputBuffer(mActivityContext);
 
 			if (textureHandle == null)
 				textureHandle = new int[1];
@@ -479,7 +483,7 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 			}
 
 //			mDataHelper.returnOutputBuffer();
-			mRWBitmapManager.returnOutputBuffer();
+//			mRWBitmapManager.returnOutputBuffer();
 
 	//	}
 	}
