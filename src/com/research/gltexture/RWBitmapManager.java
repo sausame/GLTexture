@@ -3,6 +3,7 @@ package com.research.gltexture;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.opengl.GLES20;
@@ -41,6 +42,8 @@ public class RWBitmapManager {
 	private int[] mStatuses = new int[BUFFER_SIZE];
 
 	private Bitmap[] mBitmaps = new Bitmap[BUFFER_SIZE];
+	private Bitmap mPreviousBitmap = null;
+	private Canvas mPreviousCanvas = null;
 
 	public RWBitmapManager() {
 		for (int index = 0; index < BUFFER_SIZE; index++) {
@@ -74,6 +77,9 @@ public class RWBitmapManager {
 			mBitmaps[index] = Bitmap.createBitmap(mWidth, mHeight,
 					Bitmap.Config.ARGB_8888 /* Element.U8_4 */);
 		}
+
+		mPreviousBitmap = mBitmaps[0].copy(mBitmaps[0].getConfig(), true);
+		mPreviousCanvas = new Canvas(mPreviousBitmap);
 	}
 
 	public Bitmap getInputBuffer() {
@@ -147,12 +153,14 @@ public class RWBitmapManager {
 					mOutputIndex = INVALID_INT;
 					// Log.e(TAG, "No filled buffer: " + mStatuses[0] + ", " +
 					// mStatuses[1]);
-					return null;
+					return mPreviousBitmap;
 				}
 			}
 		}
 
 		display(false);
+
+		mPreviousCanvas.drawBitmap(mBitmaps[mOutputIndex], 0, 0, null);
 
 		return mBitmaps[mOutputIndex];
 	}
