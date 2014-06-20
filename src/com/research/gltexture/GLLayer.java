@@ -30,7 +30,7 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 	/**
 	 * byte array stores the camera frame
 	 */
-	private byte[] glCameraFrame = new byte[512 * 512 * 3];
+//	private byte[] glCameraFrame = new byte[512 * 512 * 3];
 	// Bitmap glCameraFrame;
 
 	/**
@@ -93,7 +93,7 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 	private int mProgramHandle;
 
 	/** This is a handle to the RenderScript object **/
-	private final RenderScript mRS;
+//	private final RenderScript mRS;
 //	private final ScriptIntrinsicYuvToRGB mScriptIntrinsicYuvToRGB;
 
 	/** RenderScript buffers **/
@@ -102,15 +102,15 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 	//private Bitmap lazyOutputBitmap;
 
 	private DataHelper mDataHelper = new DataHelper();
-	private RWBitmapManager mRWBitmapManager = new RWBitmapManager();
+	private BitmapManager mBitmapManager = new BitmapManager();
 
 	/**
 	 * Initialize the model data.
 	 */
 	public GLLayer(final Context activityContext) {
 		super(activityContext);
-		mRS = RenderScript.create(activityContext);
-		mDataHelper.setRenderScript(mRS);
+//		mRS = RenderScript.create(activityContext);
+//		mDataHelper.setRenderScript(mRS);
 //		mScriptIntrinsicYuvToRGB = ScriptIntrinsicYuvToRGB.create(mRS,
 //				Element.U8_4(mRS));
 		mActivityContext = activityContext;
@@ -380,14 +380,14 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 
 //		mDataHelper.input(frameByte);
 
-		if (! mRWBitmapManager.isInitialized()) {
-			mRWBitmapManager.setWidth(CamLayer.previewSize.width);
-			mRWBitmapManager.setHeight(CamLayer.previewSize.height);
+		if (! mBitmapManager.isInitialized()) {
+			mBitmapManager.setWidth(CamLayer.previewSize.width);
+			mBitmapManager.setHeight(CamLayer.previewSize.height);
 
-			mRWBitmapManager.init();
+			mBitmapManager.init();
 		}
 
-		mRWBitmapManager.dummyInput(mActivityContext);
+		mBitmapManager.dummyInput(mActivityContext);
 
 		synchronized (this) {
 /*			mInputAllocation.copyFrom(frameByte);
@@ -425,8 +425,8 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 //			Bitmap lazyOutputBitmap = mDataHelper.getDummyOutputBuffer(mActivityContext);
 //			Bitmap lazyOutputBitmap = mDataHelper.getOutputBuffer();
 
-			Bitmap lazyOutputBitmap = mRWBitmapManager.getOutputBuffer();
-//			Bitmap lazyOutputBitmap = mRWBitmapManager.getDummyOutputBuffer(mActivityContext);
+			Bitmap lazyOutputBitmap = mBitmapManager.getOutputBuffer();
+//			Bitmap lazyOutputBitmap = mBitmapManager.getDummyOutputBuffer(mActivityContext);
 
 			if (textureHandle == null)
 				textureHandle = new int[1];
@@ -479,7 +479,7 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 			}
 
 //			mDataHelper.returnOutputBuffer();
-			mRWBitmapManager.returnOutputBuffer();
+			mBitmapManager.returnOutputBuffer();
 
 	//	}
 	}

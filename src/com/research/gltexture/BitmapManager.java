@@ -18,8 +18,8 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.Calendar;
 
-public class RWBitmapManager {
-	private static final String TAG = "RWBitmapManager";
+public class BitmapManager {
+	private static final String TAG = "BitmapManager";
 
 	private static final boolean IS_KEEP_FILLED_BUFFER = false;
 
@@ -45,7 +45,7 @@ public class RWBitmapManager {
 	private Bitmap mPreviousBitmap = null;
 	private Canvas mPreviousCanvas = null;
 
-	public RWBitmapManager() {
+	public BitmapManager() {
 		for (int index = 0; index < BUFFER_SIZE; index++) {
 			mBitmaps[index] = null;
 			mStatuses[index] = EMPTY_BUFFER_DONE;
