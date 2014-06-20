@@ -381,9 +381,11 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 //		mDataHelper.input(frameByte);
 
 		if (! mBitmapManager.isInitialized()) {
-			mBitmapManager.setWidth(CamLayer.previewSize.width);
-			mBitmapManager.setHeight(CamLayer.previewSize.height);
-
+			mBitmapManager.setSrcSize(CamLayer.previewSize.width,
+					CamLayer.previewSize.height);
+			mBitmapManager.setDstSize((int)(CamLayer.previewSize.width * 2),
+					(int)(CamLayer.previewSize.height * 2));
+			
 			mBitmapManager.init();
 		}
 

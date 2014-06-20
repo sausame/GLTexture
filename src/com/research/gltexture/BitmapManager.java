@@ -4,19 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
-import android.hardware.Camera;
-import android.opengl.GLES20;
-import android.opengl.GLSurfaceView;
-import android.opengl.GLUtils;
-import android.opengl.Matrix;
-import android.renderscript.Allocation;
-import android.view.SurfaceHolder;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-import java.util.Calendar;
+import android.graphics.Rect;
 
 public class BitmapManager {
 	private static final String TAG = "BitmapManager";
@@ -32,9 +20,6 @@ public class BitmapManager {
 	private static final int EMPTYING_BUFFER = 2;
 	private static final int FILLING_BUFFER = 3;
 
-	private int mWidth = INVALID_INT;
-	private int mHeight = INVALID_INT;
-
 	private boolean mIsInitialized = false;
 
 	private int mInputIndex = INVALID_INT;
@@ -42,8 +27,11 @@ public class BitmapManager {
 	private int[] mStatuses = new int[BUFFER_SIZE];
 
 	private Bitmap[] mBitmaps = new Bitmap[BUFFER_SIZE];
-	private Bitmap mPreviousBitmap = null;
-	private Canvas mPreviousCanvas = null;
+	private Bitmap mDstBitmap = null;
+	private Canvas mDstCanvas = null;
+
+	private Rect mSrcRect = null;
+	private Rect mDstRect = null;
 
 	public BitmapManager() {
 		for (int index = 0; index < BUFFER_SIZE; index++) {
@@ -52,12 +40,14 @@ public class BitmapManager {
 		}
 	}
 
-	public void setWidth(int width) {
-		mWidth = width;
+	public void setSrcSize(int width, int height) {
+		mSrcRect = new Rect();
+		mSrcRect.set(0, 0, width, height);
 	}
 
-	public void setHeight(int height) {
-		mHeight = height;
+	public void setDstSize(int width, int height) {
+		mDstRect = new Rect();
+		mDstRect.set(0, 0, width, height);
 	}
 
 	public boolean isInitialized() {
@@ -65,33 +55,37 @@ public class BitmapManager {
 	}
 
 	public synchronized void init() {
-		if (mIsInitialized || INVALID_INT == mWidth || INVALID_INT == mHeight) {
+		if (mIsInitialized || null == mSrcRect || null == mDstRect) {
 			return;
 		}
 
-		Log.v(TAG, "[" + mWidth + ", " + mHeight + "]");
+		Log.v(TAG, "[" + mSrcRect.width() + ", " + mSrcRect.height() + "] -> ["
+				+ mDstRect.width() + ", " + mDstRect.height() + "]");
 
 		mIsInitialized = true;
 
 		for (int index = 0; index < BUFFER_SIZE; index++) {
-			mBitmaps[index] = Bitmap.createBitmap(mWidth, mHeight,
-					Bitmap.Config.ARGB_8888 /* Element.U8_4 */);
+			mBitmaps[index] = Bitmap
+					.createBitmap(mSrcRect.width(), mSrcRect.height(),
+							Bitmap.Config.ARGB_8888 /* Element.U8_4 */);
 		}
 
-		mPreviousBitmap = mBitmaps[0].copy(mBitmaps[0].getConfig(), true);
-		mPreviousCanvas = new Canvas(mPreviousBitmap);
+		mDstBitmap = Bitmap.createScaledBitmap(mBitmaps[0], mDstRect.width(),
+				mDstRect.height(), false);
+//		mDstBitmap = mBitmaps[0].copy(mBitmaps[0].getConfig(), true);
+		mDstCanvas = new Canvas(mDstBitmap);
 	}
 
 	public Bitmap getInputBuffer() {
 		synchronized (mStatuses) {
-			if (BUFFER_SIZE == ++ mInputIndex) {
+			if (BUFFER_SIZE == ++mInputIndex) {
 				mInputIndex = 0;
 			}
 
 			if (EMPTY_BUFFER_DONE == mStatuses[mInputIndex]) {
 				mStatuses[mInputIndex] = FILLING_BUFFER;
 			} else {
-				if (BUFFER_SIZE == ++ mInputIndex) {
+				if (BUFFER_SIZE == ++mInputIndex) {
 					mInputIndex = 0;
 				}
 
@@ -111,7 +105,8 @@ public class BitmapManager {
 
 					if (BUFFER_SIZE == mInputIndex) {
 						mInputIndex = INVALID_INT;
-						// Log.e(TAG, "No empty buffer: " + mStatuses[0] + ", " +
+						// Log.e(TAG, "No empty buffer: " + mStatuses[0] + ", "
+						// +
 						// mStatuses[1]);
 						return null;
 					}
@@ -153,16 +148,17 @@ public class BitmapManager {
 					mOutputIndex = INVALID_INT;
 					// Log.e(TAG, "No filled buffer: " + mStatuses[0] + ", " +
 					// mStatuses[1]);
-					return mPreviousBitmap;
+					return mDstBitmap;
 				}
 			}
 		}
 
 		display(false);
 
-		mPreviousCanvas.drawBitmap(mBitmaps[mOutputIndex], 0, 0, null);
+		mDstCanvas.drawBitmap(mBitmaps[mOutputIndex], mSrcRect, mDstRect, null);
+//		mDstCanvas.drawBitmap(mBitmaps[mOutputIndex], 0, 0, null);
 
-		return mBitmaps[mOutputIndex];
+		return mDstBitmap;//mBitmaps[mOutputIndex];
 	}
 
 	public void returnOutputBuffer() {
@@ -183,8 +179,10 @@ public class BitmapManager {
 	// Dummy
 	// -----------------------------------------------------------------------
 	public final void display(boolean in) {
-		String str0 = (0 == mInputIndex) ? "X" : ((0 == mOutputIndex) ? "O" : " ");
-		String str1 = (1 == mInputIndex) ? "X" : ((1 == mOutputIndex) ? "O" : " ");
+		String str0 = (0 == mInputIndex) ? "X" : ((0 == mOutputIndex) ? "O"
+				: " ");
+		String str1 = (1 == mInputIndex) ? "X" : ((1 == mOutputIndex) ? "O"
+				: " ");
 
 		Log.v(TAG, (in ? "-->   " : "<--   ") + str0 + "   " + str1);
 	}
@@ -194,37 +192,45 @@ public class BitmapManager {
 	// -----------------------------------------------------------------------
 	private int mCount = 0;
 
-	private void dummyFillBitmap(Bitmap bm, int color) {
+	private void fillBitmap(Bitmap bm, int color) {
 		int width = bm.getWidth();
 		int height = bm.getHeight();
 
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {
-				bm.setPixel(x, y, color);
+				if (x == y) {
+					if (0 == x || width - 1 == x || height - 1 == y) {
+						bm.setPixel(x, y, 0xffff0000);
+					} else {
+						bm.setPixel(x, y, 0xffffffff);
+					}
+				} else {
+					bm.setPixel(x, y, color);
+				}
 			}
 		}
 	}
 
 	public void dummyInput(Context ctx) {
 		Bitmap bm = getInputBuffer();
-		
+
 		if (null != bm) {
-			mCount ++;
+			mCount++;
 
 			int color;
 			switch ((mCount / 10) % 3) {
-				case 1:
-					color = 0xffff0000;
-					break;
-				case 2:
-					color = 0xff00ff00;
-					break;
-				default:
-					color = 0xff0000ff;
-					break;
+			case 1:
+				color = 0xffff0000;
+				break;
+			case 2:
+				color = 0xff00ff00;
+				break;
+			default:
+				color = 0xff0000ff;
+				break;
 			}
 
-			dummyFillBitmap(bm, color);
+			fillBitmap(bm, color);
 
 			returnInputBuffer();
 		}
