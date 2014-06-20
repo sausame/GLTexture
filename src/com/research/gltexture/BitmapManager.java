@@ -30,6 +30,8 @@ public class BitmapManager {
 	private Bitmap mDstBitmap = null;
 	private Canvas mDstCanvas = null;
 
+	private Bitmap mResizeBitmap = null;
+
 	private Rect mSrcRect = null;
 	private Rect mDstRect = null;
 
@@ -43,11 +45,13 @@ public class BitmapManager {
 	public void setSrcSize(int width, int height) {
 		mSrcRect = new Rect();
 		mSrcRect.set(0, 0, width, height);
+		Log.v(TAG, "Source = " + mSrcRect);
 	}
 
 	public void setDstSize(int width, int height) {
 		mDstRect = new Rect();
 		mDstRect.set(0, 0, width, height);
+		Log.v(TAG, "Dest = " + mDstRect);
 	}
 
 	public boolean isInitialized() {
@@ -72,7 +76,7 @@ public class BitmapManager {
 
 		mDstBitmap = Bitmap.createScaledBitmap(mBitmaps[0], mDstRect.width(),
 				mDstRect.height(), false);
-//		mDstBitmap = mBitmaps[0].copy(mBitmaps[0].getConfig(), true);
+		// mDstBitmap = mBitmaps[0].copy(mBitmaps[0].getConfig(), true);
 		mDstCanvas = new Canvas(mDstBitmap);
 	}
 
@@ -131,14 +135,14 @@ public class BitmapManager {
 
 	public Bitmap getOutputBuffer() {
 		synchronized (mStatuses) {
-			if (BUFFER_SIZE == ++ mOutputIndex) {
+			if (BUFFER_SIZE == ++mOutputIndex) {
 				mOutputIndex = 0;
 			}
 
 			if (FILL_BUFFER_DONE == mStatuses[mOutputIndex]) {
 				mStatuses[mOutputIndex] = EMPTYING_BUFFER;
 			} else {
-				if (BUFFER_SIZE == ++ mOutputIndex) {
+				if (BUFFER_SIZE == ++mOutputIndex) {
 					mOutputIndex = 0;
 				}
 
@@ -148,17 +152,20 @@ public class BitmapManager {
 					mOutputIndex = INVALID_INT;
 					// Log.e(TAG, "No filled buffer: " + mStatuses[0] + ", " +
 					// mStatuses[1]);
-					return mDstBitmap;
+					return mResizeBitmap; // mDstBitmap;
 				}
 			}
 		}
 
 		display(false);
 
-		mDstCanvas.drawBitmap(mBitmaps[mOutputIndex], mSrcRect, mDstRect, null);
-//		mDstCanvas.drawBitmap(mBitmaps[mOutputIndex], 0, 0, null);
+		mResizeBitmap = Bitmap.createScaledBitmap(mBitmaps[mOutputIndex],
+				mDstRect.width(), mDstRect.height(), false);
 
-		return mDstBitmap;//mBitmaps[mOutputIndex];
+		// mDstCanvas.drawBitmap(mBitmaps[mOutputIndex], mSrcRect, mDstRect, null);
+		// mDstCanvas.drawBitmap(mBitmaps[mOutputIndex], 0, 0, null);
+
+		return mResizeBitmap; // mDstBitmap;// mBitmaps[mOutputIndex];
 	}
 
 	public void returnOutputBuffer() {
@@ -240,7 +247,7 @@ public class BitmapManager {
 		int resId;
 
 		mCount++;
-		if (0 == (mCount / 20) % 2) {
+		if (0 == (mCount / 50) % 2) {
 			resId = R.drawable.ali;
 		} else {
 			resId = R.drawable.ic_launcher;

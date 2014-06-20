@@ -25,7 +25,7 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 		Camera.PreviewCallback, GLSurfaceView.Renderer {
 
 	private final Context mActivityContext;
-	private float texture_size = 1.0f;
+	private float texture_size = 1.5f;
 
 	/**
 	 * byte array stores the camera frame
@@ -118,7 +118,7 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 		// Define points for a cube.
 
 		// X, Y, Z
-		final float[] cubePositionData = {
+		final float[] cubePositionData1 = {
 				// In OpenGL counter-clockwise winding is default. This means
 				// that when we look at a triangle,
 				// if the points are counter-clockwise we are looking at the
@@ -136,6 +136,15 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 				texture_size, (-1.0f) * texture_size, texture_size,
 				texture_size, texture_size, texture_size };
 
+		final float[] cubePositionData = {
+				0, 0,
+				0, texture_size,
+				texture_size, 0,
+				0, texture_size,
+				texture_size, texture_size,
+				texture_size, 0}; 
+
+		texture_size=1.0f;
 		// S, T (or X, Y)
 		// Texture coordinate data.
 		// Because images have a Y axis pointing downward (values increase as
@@ -157,9 +166,9 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 
 		mCubeTextureCoordinates = ByteBuffer
 				.allocateDirect(
-						cubeTextureCoordinateData.length * mBytesPerFloat)
+						cubePositionData.length * mBytesPerFloat)
 				.order(ByteOrder.nativeOrder()).asFloatBuffer();
-		mCubeTextureCoordinates.put(cubeTextureCoordinateData).position(0);
+		mCubeTextureCoordinates.put(cubePositionData).position(0);
 	}
 
 	private int mWidth = -1; // Invalid
@@ -427,8 +436,8 @@ public class GLLayer extends GLSurfaceView implements SurfaceHolder.Callback,
 //			Bitmap lazyOutputBitmap = mDataHelper.getDummyOutputBuffer(mActivityContext);
 //			Bitmap lazyOutputBitmap = mDataHelper.getOutputBuffer();
 
-			Bitmap lazyOutputBitmap = mBitmapManager.getOutputBuffer();
-//			Bitmap lazyOutputBitmap = mBitmapManager.getDummyOutputBuffer(mActivityContext);
+//			Bitmap lazyOutputBitmap = mBitmapManager.getOutputBuffer();
+			Bitmap lazyOutputBitmap = mBitmapManager.getDummyOutputBuffer(mActivityContext);
 
 			if (textureHandle == null)
 				textureHandle = new int[1];
